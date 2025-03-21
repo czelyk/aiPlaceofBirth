@@ -3,6 +3,7 @@ import requests
 from dotenv import load_dotenv
 from aiCountries import AICountries
 import re
+from coordinator import get_coordinates  # Importing the new function
 
 # Load environment variables
 load_dotenv()
@@ -11,7 +12,6 @@ CX = os.getenv("GOOGLE_CX")
 
 # Initialize the AI Countries class
 ai_countries = AICountries()
-
 
 def get_first_image(query, location):
     search_url = "https://www.googleapis.com/customsearch/v1"
@@ -33,21 +33,21 @@ def get_first_image(query, location):
         # Get the image content
         img_data = requests.get(image_url).content
 
-        # Define the path to save the image in the 'pictures' folder
-        pictures_folder = os.path.join(os.getcwd(), "pictures")
-        if not os.path.exists(pictures_folder):
-            os.makedirs(pictures_folder)  # Create the folder if it doesn't exist
+        # Get coordinates for the city using the new function
+        coordinates = get_coordinates(location)
+        if coordinates:
+            lat, lon = coordinates
+            # Define the filename and save path with coordinates
+            file_name = os.path.join(
+                os.getcwd(), "pictures", f"{query.replace(' ', '_')}!3d{lat}!4d{lon}!.jpg"
+            )
 
-        # Define the filename and save path (use the celebrity's name and city for naming)
-        file_name = os.path.join(pictures_folder, f"{query.replace(' ', '_')}_{location.replace(' ', '_')}.jpg")
-
-        # Save the image
-        with open(file_name, 'wb') as f:
-            f.write(img_data)
-        print(f"Image saved as {file_name}\n")
+            # Save the image
+            with open(file_name, 'wb') as f:
+                f.write(img_data)
+            print(f"Image saved as {file_name}\n")
     else:
         print(f"No image found for {query}.")
-
 
 if __name__ == "__main__":
     print("Generating random countries and celebrities...")
