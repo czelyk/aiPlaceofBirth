@@ -13,6 +13,10 @@ CX = os.getenv("GOOGLE_CX")
 # Initialize the AI Countries class
 ai_countries = AICountries()
 
+# Create the 'pictures' folder if it doesn't exist
+pictures_folder = os.path.join(os.getcwd(), "pictures")
+os.makedirs(pictures_folder, exist_ok=True)
+
 def get_first_image(query, location):
     search_url = "https://www.googleapis.com/customsearch/v1"
     params = {
@@ -39,7 +43,7 @@ def get_first_image(query, location):
             lat, lon = coordinates
             # Define the filename and save path with coordinates
             file_name = os.path.join(
-                os.getcwd(), "pictures", f"{query.replace(' ', '_')}!3d{lat}!4d{lon}!.jpg"
+                pictures_folder, f"{query.replace(' ', '_')}!3d{lat}!4d{lon}!.jpg"
             )
 
             # Save the image
