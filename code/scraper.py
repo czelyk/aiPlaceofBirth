@@ -1,26 +1,22 @@
 import os
 import requests
 from dotenv import load_dotenv
-from aiLocation import AILocation
+from aiCountries import AICountries
+import re
 
 # Load environment variables
 load_dotenv()
 API_KEY = os.getenv("GOOGLE_API_KEY")
 CX = os.getenv("GOOGLE_CX")
 
-# Initialize the AI Location class
-ai_location = AILocation()
+# Initialize the AI Countries class
+ai_countries = AICountries()
 
 
-def get_first_image(query):
-    # Use AI model to get the location of the person
-    location = ai_location.get_location_from_name(query)
-    print(f"Location for {query}: {location}")
-
-    # Now, search for the image based on the query
+def get_first_image(query, location):
     search_url = "https://www.googleapis.com/customsearch/v1"
     params = {
-        "q": query,
+        "q": query + " portrait",
         "cx": CX,
         "key": API_KEY,
         "searchType": "image",
@@ -32,7 +28,7 @@ def get_first_image(query):
 
     if "items" in data:
         image_url = data["items"][0]["link"]
-        print("Downloading image from:", image_url)
+        print(f"Downloading image of {query} from: {image_url}")
 
         # Get the image content
         img_data = requests.get(image_url).content
@@ -42,18 +38,35 @@ def get_first_image(query):
         if not os.path.exists(pictures_folder):
             os.makedirs(pictures_folder)  # Create the folder if it doesn't exist
 
-        # Define the filename and save path (use the location for naming)
-        file_name = os.path.join(pictures_folder, f"{query}_{location}.jpg")
+        # Define the filename and save path (use the celebrity's name and city for naming)
+        file_name = os.path.join(pictures_folder, f"{query.replace(' ', '_')}_{location.replace(' ', '_')}.jpg")
 
         # Save the image
         with open(file_name, 'wb') as f:
             f.write(img_data)
-        print(f"Image saved as {file_name}")
+        print(f"Image saved as {file_name}\n")
     else:
-        print("No image found.")
+        print(f"No image found for {query}.")
 
 
-# Example usage
 if __name__ == "__main__":
-    name = input("Enter a name: ")
-    get_first_image(name)
+    print("Generating random countries and celebrities...")
+    random_countries = ai_countries.get_random_countries()
+
+    print("\nRaw AI Output:")
+    print(random_countries)  # Debugging output
+
+    print("\nGenerated Celebrities:")
+    for entry in random_countries:
+        print(f"Processing entry: {entry}")  # Debugging output
+        try:
+            match = re.search(r"Celebrity: (.+?) \(born in (.+?)\)", entry)
+            if match:
+                celebrity_name = match.group(1).strip()
+                birth_city = match.group(2).strip()
+                print(f"{celebrity_name} from {birth_city}")
+                get_first_image(celebrity_name, birth_city)
+            else:
+                print(f"Skipping invalid entry: {entry}")
+        except Exception as e:
+            print(f"Error processing entry '{entry}': {e}")
